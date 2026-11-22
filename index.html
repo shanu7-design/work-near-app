@@ -1,0 +1,224 @@
+<!doctype html>
+<!--
+WORKNEAR - structure (single file for now; split later as shown)
+  src/data/seed.js     -> JOB_ROWS + CITIES        (database seed)
+  src/db.js            -> DB (jobs, employers, users, saved/tracker, reports) + SOURCES adapters
+  src/i18n.js          -> T = {en, ml}  (add hi, ta the same way)
+  src/screens/         -> Jobs, MyJobs (tracker), Post, Profile (+alerts, safety)
+CONNECT REAL DATA: add a function to SOURCES below that fetches an API (Adzuna, govt portal, RSS via your
+own tiny proxy) and returns rows in the job shape {id,t,e,c,a,cat,ty,p,u,h,d,v,s,ph,km,req}. See loadJobs().
+Real alerts/accounts/reports need a backend (e.g. Supabase free tier): replace save()/DB with API calls.
+-->
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>WorkNear – Jobs near you</title>
+<style>
+:root{--bg:#f4faf6;--card:#fff;--tx:#16302a;--mu:#556b63;--pr:#0d7355;--pt:#fff;--bd:#d6e5dd;--ac:#fff1cf;--wr:#b3261e;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0e1815;--card:#162420;--tx:#e6f2ed;--mu:#a0b6ad;--pr:#3ccf9f;--pt:#05221a;--bd:#2a3d36;--ac:#3a3118;--wr:#ff8a80;color-scheme:dark}}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:17px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Malayalam",sans-serif;padding-bottom:84px}
+main{max-width:640px;margin:0 auto;padding:12px}
+h1{font-size:1.3rem;margin:0}h2{font-size:1.15rem;margin:.6rem 0}h3{font-size:1.05rem;margin:0}
+.top{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.mu{color:var(--mu);font-size:.9rem}
+select,input,textarea,button{font:inherit;color:var(--tx);background:var(--card);border:2px solid var(--bd);border-radius:12px;padding:10px 12px;min-height:46px}
+input,textarea,select{width:100%}
+button{cursor:pointer;font-weight:600}
+button.p{background:var(--pr);color:var(--pt);border-color:var(--pr)}
+:focus-visible{outline:3px solid var(--pr);outline-offset:2px}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}.row>*{flex:1 1 130px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:12px;margin:10px 0}
+.r1{display:flex;gap:10px;align-items:flex-start}.ic{font-size:1.8rem;line-height:1}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.tag{background:var(--bg);border:1px solid var(--bd);border-radius:99px;padding:2px 10px;font-size:.85rem}
+.tag.pay{background:var(--pr);color:var(--pt);border-color:var(--pr);font-weight:700}
+.tag.ok{background:var(--ac)}.ver{margin-left:auto;font-size:.8rem;background:var(--ac);border-radius:8px;padding:2px 8px;white-space:nowrap}
+.btns{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}
+.btns a,.btns button{display:flex;align-items:center;justify-content:center;text-align:center;min-height:48px;padding:4px;border:2px solid var(--bd);border-radius:12px;color:var(--tx);text-decoration:none;font-weight:600;font-size:.9rem;background:var(--card)}
+.btns .p{background:var(--pr);color:var(--pt);border-color:var(--pr)}
+.link{background:none;border:0;color:var(--wr);min-height:36px;padding:4px;font-size:.85rem;font-weight:500}
+.sw{display:flex;gap:10px;align-items:center;background:var(--ac);padding:10px 12px;border-radius:14px;font-weight:600}
+.sw input{width:26px;height:26px;min-height:0;flex:none}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.chips label{border:2px solid var(--bd);border-radius:99px;padding:6px 12px;display:flex;gap:6px;align-items:center;background:var(--card)}
+.chips input{width:18px;height:18px;min-height:0}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--bd);padding:4px 4px calc(4px + env(safe-area-inset-bottom,0px));z-index:5}
+nav button{flex:1;border:0;background:none;font-size:.78rem;display:flex;flex-direction:column;align-items:center;min-height:54px;gap:2px;color:var(--mu)}
+nav button[aria-current=page]{color:var(--pr)}nav .e{font-size:1.4rem}
+.modal{position:fixed;inset:0;background:#000a;display:flex;align-items:flex-end;justify-content:center;z-index:9}
+.modal>div{background:var(--card);max-width:640px;width:100%;border-radius:20px 20px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px))}
+#toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:10px 16px;border-radius:12px;z-index:10;display:none;max-width:90%}
+details{margin:6px 0}summary{cursor:pointer;font-weight:600;color:var(--pr);min-height:36px}
+.safe{background:var(--ac);border-radius:12px;padding:8px 12px;font-size:.9rem;margin-top:6px}
+label.f{display:block;font-weight:600;margin:10px 0 4px}
+</style></head><body>
+<main id="main" aria-live="polite"></main>
+<nav id="nav" aria-label="Main"></nav>
+<div id="toast" role="status"></div>
+<div id="modal"></div>
+<script>
+"use strict";
+/* ---------- i18n: add hi / ta objects with the same keys to support more languages ---------- */
+const T={
+en:{jobs:'Jobs',my:'My jobs',post:'Post job',me:'Profile',near:'Jobs near',student:'Student mode: flexible, no experience',free:'My free hours',apply:'Apply',call:'Call',wa:'WhatsApp',save:'Save',saved:'Saved ✓',report:'Report this job',ver:'✔ Verified',upd:'Last updated',today:'Posted today',ago:'days ago',allT:'All job types',allC:'All categories',anyPay:'Any pay',anyKm:'Any distance',earn:'⚡ Earn today',fits:'Fits your hours',none:'No jobs match. Try removing a filter, or set an alert.',details:'Details & safety',req:'Requirements',tip:'Never pay money to get a job. Verify the employer. Meet in public places.',safeT:'Stay safe from scams',s1:'Never pay to get a job or for "training" or "kit".',s2:'Check the employer: call them, ask for the shop address.',s3:'Meet in public places and tell someone at home.',s4:'Report fake or expired jobs with the Report button.',gotit:'I understand',track:'Tracker',st_saved:'Saved',st_applied:'Applied',st_interview:'Interview',st_offer:'Offer',st_rejected:'Rejected',remind:'Reminder date',empty:'Nothing here yet. Save or apply to a job.',remove:'Remove',pj:'Post a job in 2 minutes',jt:'Job title',emp:'Shop / your name',ph:'Phone number',city:'City',area:'Area / locality',cat:'Category',type:'Job type',pay:'Pay (₹)',unit:'Per',hours:'Hours (e.g. 4–8 pm)',rq:'Requirements',submit:'Post job',posted:'Job posted! It shows for 30 days.',prof:'Your profile',name:'Name',phoneOrMail:'Phone or email',skills:'Skills',about:'About me (optional)',sv:'Save profile',alerts:'Job alerts',addA:'Add alert',newA:'new in last 3 days',addCity:'Type new city name',hr:'hour',day:'day',month:'month',reported:'Thanks, we will check this job.',applied:'Marked Applied. Now call or WhatsApp the employer.',pg:'Jobs hidden after 30 days',locate:'Use my location',km:'km',any:'Any',e:'Evenings',w:'Weekends',m:'Mornings'},
+ml:{jobs:'ജോലികൾ',my:'എന്റെ ജോലികൾ',post:'ജോലി ചേർക്കുക',me:'പ്രൊഫൈൽ',near:'സമീപത്തെ ജോലികൾ',student:'വിദ്യാർത്ഥി മോഡ്: വഴക്കമുള്ള സമയം, പരിചയം വേണ്ട',free:'എന്റെ ഒഴിവു സമയം',apply:'അപേക്ഷിക്കുക',call:'വിളിക്കുക',wa:'വാട്സ്ആപ്പ്',save:'സേവ്',saved:'സേവ് ചെയ്തു ✓',report:'ഈ ജോലി റിപ്പോർട്ട് ചെയ്യുക',ver:'✔ സ്ഥിരീകരിച്ചത്',upd:'അവസാന അപ്ഡേറ്റ്',today:'ഇന്ന് ചേർത്തത്',ago:'ദിവസം മുമ്പ്',allT:'എല്ലാ തരം',allC:'എല്ലാ വിഭാഗങ്ങളും',anyPay:'ഏത് ശമ്പളവും',anyKm:'ഏത് ദൂരവും',earn:'⚡ ഇന്ന് സമ്പാദിക്കാം',fits:'നിങ്ങളുടെ സമയത്തിന് ചേരും',none:'ജോലികളില്ല. ഫിൽട്ടർ മാറ്റുക, അല്ലെങ്കിൽ അലർട്ട് വയ്ക്കുക.',details:'വിവരങ്ങളും സുരക്ഷയും',req:'ആവശ്യകതകൾ',tip:'ജോലിക്കായി ഒരിക്കലും പണം നൽകരുത്. തൊഴിലുടമയെ ഉറപ്പാക്കുക. പൊതുസ്ഥലത്ത് കാണുക.',safeT:'തട്ടിപ്പിൽ നിന്ന് സുരക്ഷിതരാകൂ',s1:'ജോലിക്കോ "ട്രെയിനിംഗിനോ" പണം നൽകരുത്.',s2:'തൊഴിലുടമയെ വിളിച്ച് കടയുടെ വിലാസം ചോദിക്കുക.',s3:'പൊതുസ്ഥലത്ത് കാണുക, വീട്ടിൽ ആരെയെങ്കിലും അറിയിക്കുക.',s4:'വ്യാജ ജോലികൾ റിപ്പോർട്ട് ചെയ്യുക.',gotit:'മനസ്സിലായി',track:'ട്രാക്കർ',st_saved:'സേവ് ചെയ്തത്',st_applied:'അപേക്ഷിച്ചു',st_interview:'ഇന്റർവ്യൂ',st_offer:'ഓഫർ',st_rejected:'നിരസിച്ചു',remind:'ഓർമ്മപ്പെടുത്തൽ തീയതി',empty:'ഒന്നുമില്ല. ഒരു ജോലി സേവ് ചെയ്യുക.',remove:'നീക്കം ചെയ്യുക',pj:'2 മിനിറ്റിൽ ജോലി ചേർക്കുക',jt:'ജോലിയുടെ പേര്',emp:'കട / നിങ്ങളുടെ പേര്',ph:'ഫോൺ നമ്പർ',city:'നഗരം',area:'സ്ഥലം',cat:'വിഭാഗം',type:'ജോലി തരം',pay:'ശമ്പളം (₹)',unit:'ഓരോ',hours:'സമയം',rq:'ആവശ്യകതകൾ',submit:'ജോലി ചേർക്കുക',posted:'ജോലി ചേർത്തു! 30 ദിവസം കാണിക്കും.',prof:'നിങ്ങളുടെ പ്രൊഫൈൽ',name:'പേര്',phoneOrMail:'ഫോൺ അല്ലെങ്കിൽ ഇമെയിൽ',skills:'കഴിവുകൾ',about:'എന്നെക്കുറിച്ച് (ഐച്ഛികം)',sv:'സേവ് ചെയ്യുക',alerts:'ജോബ് അലർട്ടുകൾ',addA:'അലർട്ട് ചേർക്കുക',newA:'കഴിഞ്ഞ 3 ദിവസത്തിൽ പുതിയത്',addCity:'നഗരത്തിന്റെ പേര് ടൈപ്പ് ചെയ്യുക',hr:'മണിക്കൂർ',day:'ദിവസം',month:'മാസം',reported:'നന്ദി, ഞങ്ങൾ പരിശോധിക്കും.',applied:'അപേക്ഷിച്ചതായി അടയാളപ്പെടുത്തി. ഇനി വിളിക്കൂ.',locate:'എന്റെ സ്ഥലം',km:'കി.മീ',any:'ഏതും',e:'വൈകുന്നേരം',w:'വാരാന്ത്യം',m:'രാവിലെ'}};
+const TY={parttime:['🕒','Part-time','പാർട്ട് ടൈം'],fulltime:['💼','Full-time','ഫുൾ ടൈം'],internship:['🎓','Internship','ഇന്റേൺഷിപ്പ്'],weekend:['📅','Weekend only','വാരാന്ത്യം മാത്രം'],wfh:['🏠','Work from home','വീട്ടിൽ നിന്ന്'],gig:['⚡','One-day gig','ഒരു ദിവസത്തെ ജോലി']};
+const CA={retail:['🛍️','Retail','ചില്ലറ വിൽപ്പന'],delivery:['🛵','Delivery','ഡെലിവറി'],tutoring:['📚','Tutoring','ട്യൂഷൻ'],data:['⌨️','Data entry','ഡാറ്റ എൻട്രി'],hospitality:['☕','Hospitality','ഹോസ്പിറ്റാലിറ്റി'],teaching:['🍎','Teaching','അധ്യാപനം'],freelance:['🎨','Freelancing','ഫ്രീലാൻസ്'],other:['🧰','Other','മറ്റുള്ളവ']};
+const L=()=>S.lang==='ml'?2:1; // index into TY/CA labels
+const t=k=>(T[S.lang]&&T[S.lang][k])||T.en[k]||k;
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const $=s=>document.querySelector(s);
+
+/* ---------- seed data: title|employer|city|area|category|type|pay|unit|hours|daysAgo|verified|slots|km|requirements
+   slots: e=evenings w=weekends m=mornings f=flexible n=no experience needed ---------- */
+const CITIES={A:{n:'Alappuzha',ml:'ആലപ്പുഴ',la:9.49,lo:76.33},K:{n:'Kochi',ml:'കൊച്ചി',la:9.93,lo:76.27},T:{n:'Thiruvananthapuram',ml:'തിരുവനന്തപുരം',la:8.52,lo:76.94},Z:{n:'Kozhikode',ml:'കോഴിക്കോട്',la:11.25,lo:75.78}};
+const ROWS=`Shop Assistant|Neethu Textiles|A|Mullakkal|retail|parttime|350|day|4–8 pm|2|1|enf|2|Basic Malayalam
+Delivery Partner|Beach Bites|A|Beach Road|delivery|parttime|90|hour|6–10 pm|1|1|enf|3|Own bike, licence
+Maths Tutor (Class 8–10)|Sree Home Tuitions|A|Vadackal|tutoring|parttime|400|hour|5–7 pm|4|0|ew|4|Degree student, good at Maths
+Data Entry Operator|Kuttanad Agro Traders|A|Kalarcode|data|fulltime|13000|month|9 am–5 pm|6|1|n|5|Typing 25 wpm
+Café Helper|Houseboat Café|A|Punnamada|hospitality|weekend|600|day|Sat–Sun|3|1|wn|6|No experience needed
+Guest Assistant|Backwater Stays|A|Punnamada|hospitality|fulltime|15000|month|Shifts|10|0|n|7|Basic English
+Typist (Work from Home)|TypeFast Online|A|Remote|data|wfh|8000|month|Flexible|5|0|fn|0|Phone or laptop
+Wedding Event Helper|Gokulam Events|A|Thathampally|other|gig|900|day|1 day|1|0|wn|8|Neat appearance
+Barista|Kaapi Corner|K|Edappally|hospitality|parttime|120|hour|4–9 pm|2|1|efn|4|Friendly, will train
+Delivery Rider|QuickBasket|K|Kakkanad|delivery|fulltime|18000|month|8 hrs|3|1|f|6|Bike + licence
+Sales Associate|City Mobiles|K|MG Road|retail|parttime|10000|month|5 hrs|7|1|efn|3|Basic Hindi/English
+Weekend Promoter|BrandBuzz|K|Marine Drive|other|weekend|1000|day|Sat–Sun|2|0|wn|3|Outgoing, 18+
+Graphic Designer (Freelance)|Pixel Studio|K|Vyttila|freelance|wfh|15000|month|Flexible|9|1|f|5|Canva or Photoshop
+English Tutor (Online)|SpeakUp Academy|K|Remote|tutoring|wfh|300|hour|Evenings|4|1|ef|0|Fluent English
+Social Media Intern|Startup Hub|K|Infopark|other|internship|5000|month|Flexible|6|1|fn|9|Student or fresher
+Kitchen Helper|Spice Route|K|Fort Kochi|hospitality|parttime|700|day|6–10 pm|1|0|en|7|Hygiene, will train
+Stock Counting (Today)|Fresh Mart|K|Palarivattom|retail|gig|800|day|1 day|0|1|wn|4|Careful with numbers
+Teaching Assistant|Little Stars School|T|Pattom|teaching|fulltime|14000|month|8 am–3 pm|8|1|m|2|Degree, loves children
+Receptionist|Dr. Nair's Dental|T|Kowdiar|other|parttime|9000|month|9 am–1 pm|5|1|mn|3|Good phone manners
+Delivery Partner|FoodNow|T|Technopark|delivery|parttime|100|hour|7–11 pm|2|1|efn|6|Bike + licence
+Cashier|Green Grocers|T|Kazhakkoottam|retail|fulltime|12000|month|9 hrs|11|0|n|9|Basic maths
+Content Writer (Malayalam)|Kerala Digital News|T|Remote|freelance|wfh|400|day|Flexible|3|0|f|0|Good Malayalam writing
+Science Tutor|Aksharam Classes|T|Vazhuthacaud|tutoring|weekend|500|hour|Sat–Sun|3|1|w|3|Science degree student
+Data Entry Intern|Technopark Analytics|T|Technopark|data|internship|6000|month|Flexible|6|1|fn|7|Excel basics
+Event Volunteer Staff|Onam Fest Team|T|Kanakakkunnu|other|gig|700|day|1 day|0|0|wn|3|Energetic
+Bakery Counter Staff|Calicut Bakes|Z|Mavoor Road|retail|parttime|300|day|3–8 pm|2|1|en|3|No experience needed
+Delivery Rider|CityDrop|Z|Palayam|delivery|parttime|90|hour|6–10 pm|1|1|efn|2|Bike + licence
+Home Tutor (Class 5–7)|Sneha Tuitions|Z|Nadakkavu|tutoring|parttime|250|hour|5–7 pm|9|0|e|4|Patient with children
+Waiter|Malabar Dine|Z|Beach Road|hospitality|fulltime|15000|month|Shifts|4|1|n|3|Will train
+Survey Data Entry (Home)|DataBridge|Z|Remote|data|wfh|7000|month|Flexible|12|0|fn|0|Phone or laptop
+Weekend Retail Helper|Mithai Street|Z|SM Street|retail|weekend|600|day|Sat–Sun|3|1|wn|2|No experience needed
+Photographer's Assistant|Lens Frames|Z|Mananchira|freelance|gig|800|day|1 day|0|0|wn|2|Carry gear, learn fast
+Old Shop Helper (expired)|Old Shop|A|Town|retail|parttime|300|day|Day|35|0|n|2|Hidden: older than 30 days
+Old Tutor Post (expired)|Old Tuition|K|Town|tutoring|parttime|300|hour|Eve|41|0|e|2|Hidden: older than 30 days`;
+const SEED=ROWS.split('\n').map((r,i)=>{const x=r.split('|');return{id:i+1,t:x[0],e:x[1],c:x[2],a:x[3],cat:x[4],ty:x[5],p:+x[6],u:x[7],h:x[8],d:+x[9],v:+x[10],s:x[11],km:+x[12],req:x[13],ph:'9000000'+(100+i)}});
+
+/* ---------- state + storage (swap for a real backend later) ---------- */
+let S={lang:'en',city:'A',tab:'jobs',student:false,free:[],f:{ty:'',cat:'',pay:0,km:0,today:false},tr:{},reports:[],posted:[],alerts:[],cities:[],prof:{},seen:false,updated:Date.now()};
+try{Object.assign(S,JSON.parse(localStorage.getItem('worknear')||'{}'))}catch(e){}
+const save=()=>{try{localStorage.setItem('worknear',JSON.stringify(S))}catch(e){}};
+/* SOURCES: add API adapters here. Each returns an array of jobs in the SEED shape. */
+const SOURCES=[()=>SEED,()=>S.posted];
+const loadJobs=()=>SOURCES.flatMap(f=>f()); // later: await Promise.all(...) and cache
+const cityName=c=>CITIES[c]?(S.lang==='ml'?CITIES[c].ml:CITIES[c].n):c;
+const perDay=j=>j.u==='hour'?j.p*6:j.u==='month'?j.p/26:j.p; // pay as rough per-day value for filtering
+const visible=()=>loadJobs().filter(j=>j.d<=30&&!S.reports.includes(j.id)); // auto-hide older than 30 days
+const fits=j=>S.free.length&&(j.s.includes('f')||S.free.some(x=>j.s.includes(x)));
+function toast(m){const e=$('#toast');e.textContent=m;e.style.display='block';clearTimeout(toast.k);toast.k=setTimeout(()=>e.style.display='none',2800)}
+const go=(tab)=>{S.tab=tab;save();render();scrollTo(0,0)};
+const set=(fn)=>{fn();save();render()};
+const opts=(o,sel,all,ix)=>(all!=null?`<option value="">${all}</option>`:'')+Object.keys(o).map(k=>`<option value="${k}" ${k===sel?'selected':''}>${ix==null?o[k]:o[k][0]+' '+o[k][ix]}</option>`).join('');
+const payTxt=j=>'₹'+j.p.toLocaleString('en-IN')+'/'+t(j.u==='hour'?'hr':j.u).replace('hour','hr');
+
+/* ---------- screens ---------- */
+function card(j){
+ const tr=S.tr[j.id],ty=TY[j.ty],ca=CA[j.cat];
+ return `<article class="card" aria-label="${esc(j.t)}"><div class="r1"><span class="ic" aria-hidden="true">${ca[0]}</span>
+ <div><h3>${esc(j.t)}</h3><div class="mu">${esc(j.e)} · ${esc(j.a)}${j.km?' · '+j.km+' '+t('km'):''}</div></div>${j.v?`<span class="ver">${t('ver')}</span>`:''}</div>
+ <div class="tags"><span class="tag pay">${payTxt(j)}</span><span class="tag">🕐 ${esc(j.h)}</span><span class="tag">${ty[0]} ${ty[L()]}</span>
+ <span class="tag">${j.d===0?t('today'):j.d+' '+t('ago')}</span>${j.s.includes('n')?'<span class="tag">✨ No experience</span>':''}${fits(j)?`<span class="tag ok">✅ ${t('fits')}</span>`:''}</div>
+ <details><summary>${t('details')}</summary><p><b>${t('req')}:</b> ${esc(j.req)}</p><div class="safe">🛡️ ${t('tip')}</div></details>
+ <div class="btns"><button class="p" onclick="apply(${j.id})">${t('apply')}</button><a href="tel:+91${j.ph}" aria-label="${t('call')} ${esc(j.e)}">📞 ${t('call')}</a>
+ <a href="https://wa.me/91${j.ph}" target="_blank" rel="noopener" aria-label="${t('wa')}">💬 WA</a><button onclick="toggleSave(${j.id})" aria-pressed="${!!tr}">${tr?t('saved'):'🔖 '+t('save')}</button></div>
+ <button class="link" onclick="reportJob(${j.id})">🚩 ${t('report')}</button></article>`}
+
+function jobsView(){
+ const f=S.f;
+ let list=visible().filter(j=>j.c===S.city&&(!f.ty||j.ty===f.ty)&&(!f.cat||j.cat===f.cat)&&perDay(j)>=f.pay&&(!f.km||j.km<=f.km)&&(!f.today||(j.d===0&&j.ty==='gig')));
+ if(S.student)list=list.filter(j=>j.s.includes('n')&&(!S.free.length||fits(j)));
+ list.sort((a,b)=>(fits(b)-fits(a))||a.km-b.km||a.d-b.d);
+ const cityOpts=Object.keys(CITIES).concat(S.cities).map(c=>`<option value="${esc(c)}" ${c===S.city?'selected':''}>${esc(cityName(c))}</option>`).join('')+`<option value="__add">+ ${t('addCity').split(' ').slice(-2).join(' ')}</option>`;
+ return `<div class="top"><h1>📍 ${t('near')}</h1><select style="width:auto" aria-label="${t('city')}" onchange="setCity(this.value)">${cityOpts}</select></div>
+ <div class="row"><button onclick="locate()">📍 ${t('locate')}</button><button onclick="set(()=>S.f.today=!S.f.today)" aria-pressed="${f.today}" class="${f.today?'p':''}">${t('earn')}</button></div>
+ <label class="sw"><input type="checkbox" ${S.student?'checked':''} onchange="set(()=>S.student=this.checked)">🎓 ${t('student')}</label>
+ ${S.student?`<div class="chips" role="group" aria-label="${t('free')}"><b style="width:100%">${t('free')}:</b>${['e','w','m'].map(k=>`<label><input type="checkbox" ${S.free.includes(k)?'checked':''} onchange="toggleFree('${k}')">${t(k)}</label>`).join('')}</div>`:''}
+ <div class="row"><select aria-label="${t('type')}" onchange="set(()=>S.f.ty=this.value)">${opts(TY,f.ty,t('allT'),L())}</select>
+ <select aria-label="${t('cat')}" onchange="set(()=>S.f.cat=this.value)">${opts(CA,f.cat,t('allC'),L())}</select>
+ <select aria-label="Pay" onchange="set(()=>S.f.pay=+this.value)">${[0,300,500,800].map(v=>`<option value="${v}" ${v==f.pay?'selected':''}>${v?'₹'+v+'+ /day':t('anyPay')}</option>`).join('')}</select>
+ <select aria-label="Distance" onchange="set(()=>S.f.km=+this.value)">${[0,3,5,10].map(v=>`<option value="${v}" ${v==f.km?'selected':''}>${v?'≤ '+v+' '+t('km'):t('anyKm')}</option>`).join('')}</select></div>
+ <p class="mu">${list.length} · ${t('upd')}: ${new Date(S.updated).toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'})} · ${t('pg')}</p>
+ ${list.map(card).join('')||`<div class="card">${t('none')}</div>`}`}
+
+function trackerView(){
+ const ids=Object.keys(S.tr).map(Number),all=loadJobs();
+ const sts=['saved','applied','interview','offer','rejected'];
+ return `<h1>🔖 ${t('track')}</h1>`+(ids.map(id=>{const j=all.find(x=>x.id===id);if(!j)return'';const r=S.tr[id];
+ return `<div class="card"><h3>${CA[j.cat][0]} ${esc(j.t)}</h3><div class="mu">${esc(j.e)} · ${esc(cityName(j.c))} · ${payTxt(j)}</div>
+ <div class="row"><select aria-label="Status" onchange="set(()=>S.tr[${id}].st=this.value)">${sts.map(s=>`<option value="${s}" ${r.st===s?'selected':''}>${t('st_'+s)}</option>`).join('')}</select>
+ <label class="mu">${t('remind')}<input type="date" value="${esc(r.rem||'')}" onchange="set(()=>S.tr[${id}].rem=this.value)"></label></div>
+ <div class="btns" style="grid-template-columns:1fr 1fr 1fr"><a href="tel:+91${j.ph}">📞 ${t('call')}</a><a href="https://wa.me/91${j.ph}" target="_blank" rel="noopener">💬 WA</a><button onclick="set(()=>delete S.tr[${id}])">${t('remove')}</button></div></div>`}).join('')||`<div class="card">${t('empty')}</div>`)}
+
+function postView(){
+ const cs=Object.keys(CITIES).concat(S.cities).map(c=>[c,cityName(c)]);
+ return `<h1>🏪 ${t('pj')}</h1><p class="mu">No resume or registration needed.</p>
+ <div id="pf"><label class="f" for="pt">${t('jt')}</label><input id="pt" required>
+ <label class="f" for="pe">${t('emp')}</label><input id="pe">
+ <label class="f" for="pp">${t('ph')}</label><input id="pp" type="tel" inputmode="numeric" maxlength="10" placeholder="9xxxxxxxxx">
+ <div class="row"><div><label class="f" for="pc">${t('city')}</label><select id="pc">${cs.map(c=>`<option value="${esc(c[0])}" ${c[0]===S.city?'selected':''}>${esc(c[1])}</option>`).join('')}</select></div>
+ <div><label class="f" for="pa">${t('area')}</label><input id="pa"></div></div>
+ <div class="row"><div><label class="f" for="pk">${t('cat')}</label><select id="pk">${opts(CA,'',null,L())}</select></div>
+ <div><label class="f" for="py">${t('type')}</label><select id="py">${opts(TY,'',null,L())}</select></div></div>
+ <div class="row"><div><label class="f" for="pm">${t('pay')}</label><input id="pm" type="number" inputmode="numeric" min="0"></div>
+ <div><label class="f" for="pu">${t('unit')}</label><select id="pu"><option value="hour">${t('hr')}</option><option value="day">${t('day')}</option><option value="month">${t('month')}</option></select></div></div>
+ <label class="f" for="ph">${t('hours')}</label><input id="ph"><label class="f" for="pr">${t('rq')}</label><textarea id="pr" rows="2"></textarea>
+ <label class="sw" style="margin-top:10px"><input type="checkbox" id="pn">✨ No experience needed</label>
+ <button class="p" style="width:100%;margin-top:12px" onclick="submitJob()">${t('submit')}</button></div>`}
+
+function profileView(){
+ const p=S.prof,cs=Object.keys(CITIES).concat(S.cities);
+ const al=S.alerts.map((a,i)=>{const n=visible().filter(j=>j.c===a.c&&(!a.cat||j.cat===a.cat)&&(!a.ty||j.ty===a.ty)&&j.d<=3).length;
+  return `<div class="card">🔔 ${esc(cityName(a.c))} · ${a.cat?CA[a.cat][L()]:t('allC')} · ${a.ty?TY[a.ty][L()]:t('allT')}<br><b>${n}</b> ${t('newA')} <button class="link" onclick="set(()=>S.alerts.splice(${i},1))">${t('remove')}</button></div>`}).join('');
+ return `<h1>👤 ${t('prof')}</h1>
+ <label class="f" for="u1">${t('name')}</label><input id="u1" value="${esc(p.name)}" autocomplete="name">
+ <label class="f" for="u2">${t('phoneOrMail')}</label><input id="u2" value="${esc(p.contact)}" autocomplete="tel">
+ <label class="f" for="u3">${t('skills')}</label><input id="u3" value="${esc(p.skills)}" placeholder="Typing, Malayalam, Excel…">
+ <label class="f" for="u4">${t('about')}</label><textarea id="u4" rows="3">${esc(p.about)}</textarea>
+ <div class="chips" role="group" aria-label="${t('free')}"><b style="width:100%">${t('free')}:</b>${['e','w','m'].map(k=>`<label><input type="checkbox" ${S.free.includes(k)?'checked':''} onchange="toggleFree('${k}',1)">${t(k)}</label>`).join('')}</div>
+ <button class="p" style="width:100%" onclick="saveProfile()">${t('sv')}</button>
+ <h2>🔔 ${t('alerts')}</h2>${al}
+ <div class="row"><select id="a1">${cs.map(c=>`<option value="${esc(c)}">${esc(cityName(c))}</option>`).join('')}</select><select id="a2">${opts(CA,'',t('allC'),L())}</select><select id="a3">${opts(TY,'',t('allT'),L())}</select></div>
+ <button onclick="addAlert()" style="width:100%">+ ${t('addA')}</button>
+ <p class="mu">Alerts show here for now. Push/SMS alerts need the backend (see README comment).</p>
+ <h2>🛡️ ${t('safeT')}</h2><div class="safe">• ${t('s1')}<br>• ${t('s2')}<br>• ${t('s3')}<br>• ${t('s4')}</div>`}
+
+/* ---------- actions ---------- */
+function apply(id){set(()=>{const r=S.tr[id];if(!r||r.st==='saved')S.tr[id]={st:'applied',rem:''}});toast(t('applied'))}
+function toggleSave(id){set(()=>{if(S.tr[id])delete S.tr[id];else S.tr[id]={st:'saved',rem:''}})}
+function reportJob(id){set(()=>S.reports.push(id));toast(t('reported'))} // real app: POST to reports table, auto-hide after N reports
+function toggleFree(k,keep){const i=S.free.indexOf(k);i<0?S.free.push(k):S.free.splice(i,1);save();if(!keep)render()}
+function setCity(v){if(v==='__add'){const n=(prompt(t('addCity'))||'').trim().slice(0,40);if(n&&!CITIES[n]&&!S.cities.includes(n))S.cities.push(n);if(n)S.city=n;save();render();return}set(()=>S.city=v)}
+function locate(){if(!navigator.geolocation)return toast('Location not available');
+ navigator.geolocation.getCurrentPosition(p=>{let b,m=1e9;for(const k in CITIES){const c=CITIES[k],d=(c.la-p.coords.latitude)**2+(c.lo-p.coords.longitude)**2;if(d<m){m=d;b=k}}set(()=>S.city=b)},()=>toast('Please allow location, or pick your city'))}
+function submitJob(){const v=i=>$('#'+i).value.trim();
+ if(!v('pt')||!/^\d{10}$/.test(v('pp')))return toast('Add a job title and 10-digit phone');
+ const j={id:1000+Date.now()%1e6,t:v('pt').slice(0,60),e:v('pe').slice(0,40)||'Local employer',c:v('pc'),a:v('pa').slice(0,40)||'Nearby',cat:v('pk'),ty:v('py'),p:+v('pm')||0,u:v('pu'),h:v('ph').slice(0,30)||'Flexible',d:0,v:0,s:'f'+($('#pn').checked?'n':''),ph:v('pp'),km:1,req:v('pr').slice(0,200)||'Contact employer'};
+ set(()=>{S.posted.push(j);S.city=j.c;S.updated=Date.now();S.tab='jobs'});toast(t('posted'));scrollTo(0,0)}
+function saveProfile(){set(()=>S.prof={name:$('#u1').value,contact:$('#u2').value,skills:$('#u3').value,about:$('#u4').value});toast('✓')}
+function addAlert(){set(()=>S.alerts.push({c:$('#a1').value,cat:$('#a2').value,ty:$('#a3').value}))}
+function safety(){$('#modal').innerHTML=`<div class="modal" role="dialog" aria-modal="true" aria-label="${t('safeT')}"><div><h2>🛡️ ${t('safeT')}</h2><p>1. ${t('s1')}</p><p>2. ${t('s2')}</p><p>3. ${t('s3')}</p><p>4. ${t('s4')}</p><button class="p" style="width:100%" onclick="S.seen=true;save();$('#modal').innerHTML=''">${t('gotit')}</button></div></div>`}
+
+function render(){
+ document.documentElement.lang=S.lang;
+ const v={jobs:jobsView,my:trackerView,post:postView,me:profileView}[S.tab]();
+ const lang=`<div style="text-align:right"><select style="width:auto;min-height:36px;padding:2px 8px" aria-label="Language" onchange="set(()=>S.lang=this.value)"><option value="en" ${S.lang==='en'?'selected':''}>English</option><option value="ml" ${S.lang==='ml'?'selected':''}>മലയാളം</option></select> <b style="float:left;font-size:1.25rem;color:var(--pr)">WorkNear</b></div>`;
+ const keep=document.activeElement&&document.activeElement.id;
+ $('#main').innerHTML=lang+v;
+ $('#nav').innerHTML=[['jobs','🔍','jobs'],['my','🔖','my'],['post','➕','post'],['me','👤','me']].map(x=>`<button onclick="go('${x[0]}')" ${S.tab===x[0]?'aria-current="page"':''}><span class="e" aria-hidden="true">${x[1]}</span>${t(x[2])}</button>`).join('');
+}
+render();if(!S.seen)safety();
+</script></body></html>
