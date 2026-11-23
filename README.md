@@ -22,7 +22,7 @@ Built for India first (Kerala cities: Alappuzha, Kochi, Thiruvananthapuram, Kozh
 
 ## Run it
 
-No install needed.
+No install needed.it requires installation as an app
 
 1. Download or clone this repo
 2. Open `index.html` in a browser (or on your phone)
